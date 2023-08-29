@@ -77,51 +77,54 @@ async function makeChatCompletion(message) {
 }
 bot.start((ctx) => ctx.reply("Welcome"));
 
-bot.on("text", async (ctx) => {
-  ctx.reply("Procesing ...");
-  ctx.reply(await makeChatCompletion(ctx.update.message));
+bot.on("text", (ctx) => {
+  ctx.persistentChatAction("typing", async () => {
+    const chatCompletionResponse = await makeChatCompletion(ctx.update.message);
+    ctx.reply(chatCompletionResponse);
+  });
 });
 
 bot.on("voice", async (context) => {
-  context.reply("Procesing ...");
-  const fileLINK = await bot.telegram.getFileLink(
-    context.message.voice.file_id
-  );
-  https.get(fileLINK.href, (response) => {
-    if (response.statusCode !== 200) {
-      console.error("Error en la solicitud:", response.statusCode);
-      return;
-    }
+  const chatId = context.update.message.chat.id;
 
-    // Crear un flujo de escritura hacia el archivo local
-    const writeStream = fs.createWriteStream("salida.ogg");
+  context.persistentChatAction("typing", async () => {
+    const fileLink = await bot.telegram.getFileLink(
+      context.message.voice.file_id
+    );
 
-    // Pipe (conectar) el flujo de lectura de la respuesta al flujo de escritura hacia el archivo local
-    response.pipe(writeStream);
+    await new Promise((resolve, reject) => {
+      https.get(fileLink.href, (response) => {
+        if (response.statusCode !== 200) {
+          clearInterval(typingInterval);
+          reject(new Error(`Error en la solicitud: ${response.statusCode}`));
+          return;
+        }
 
-    writeStream.on("finish", async () => {
-      const resp = await openai.audio.transcriptions.create({
-        model: "whisper-1",
-        file: fs.createReadStream("salida.ogg"),
+        const writeStream = fs.createWriteStream("salida.ogg");
+        response.pipe(writeStream);
+
+        writeStream.on("finish", resolve);
+        writeStream.on("error", (err) => {
+          clearInterval(typingInterval);
+          reject(err);
+        });
       });
-      const response = await makeChatCompletion({
-        chat: {
-          id: context.update.message.chat.id,
-        },
-        text: resp.text,
-      });
-      context.reply(response.text);
-      /* await gTTS(response.text, {
-        path: "Voice.mp3",
-        lang: langdetect.detectOne(response.text),
-      });
-      context.sendAudio({ source: "Voice.mp3" }); */
-      console.log("Archivo guardado correctamente en:", "salida.ogg");
     });
 
-    writeStream.on("error", (err) => {
-      console.error("Error al guardar el archivo:", err);
+    const resp = await openai.audio.transcriptions.create({
+      model: "whisper-1",
+      file: fs.createReadStream("salida.ogg"),
     });
+
+    const completionResponse = await makeChatCompletion({
+      chat: {
+        id: chatId,
+      },
+      text: resp.text,
+    });
+
+    context.reply(completionResponse.text);
+    console.log("Archivo guardado correctamente en: salida.ogg");
   });
 });
 
