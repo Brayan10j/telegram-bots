@@ -19,6 +19,6 @@ bot.on("text", (ctx) => ctx.reply('👍'));
 bot.hears('hi', (ctx) => ctx.reply('Hey there'));
 bot.launch()
 
-// Enable graceful stop
+/* // Enable graceful stop
 process.once('SIGINT', () => bot.stop('SIGINT'));
-process.once('SIGTERM', () => bot.stop('SIGTERM')); 
+process.once('SIGTERM', () => bot.stop('SIGTERM'));  */
