@@ -28,16 +28,7 @@ bot.help((ctx) => ctx.reply("Send me a sticker"));
 bot.on("text", (ctx) => ctx.reply("👍"));
 bot.hears("hi", (ctx) => ctx.reply("Hey there"));
 if (process.env.NODE_ENV == "production") {
-  bot
-    .launch({
-      webhook: {
-        domain: "https://siontelegram-bots-352013a47d20.herokuapp.com/",
-        port: process.env.PORT,
-      },
-    })
-    .then(() => {
-      console.info(`The bot ${bot.botInfo.username} is running on server`);
-    });
+    app.use(await bot.createWebhook({ domain: 'https://siontelegram-bots-352013a47d20.herokuapp.com' }));
 } else {
   // if local use Long-polling
   bot.launch().then(() => {
