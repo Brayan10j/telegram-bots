@@ -1,5 +1,16 @@
-import { Telegraf } from "telegraf";
+import fs from "fs";
+import { OpenAI } from "langchain/llms/openai";
 import 'dotenv/config';
+import { Telegraf } from "telegraf";
+
+
+/* const prompt = PromptTemplate.fromTemplate(`
+Conversation history:
+{history}
+Human: 
+{input}
+AI:`); */
+
 
 const bot = new Telegraf(process.env.BOT);
 bot.start((ctx) => ctx.reply('Welcome'));
