@@ -1,14 +1,36 @@
 import express from "express";
 import "dotenv/config";
-import { Telegraf } from "telegraf";
+import { Telegraf, session } from "telegraf";
 import fs from "fs";
 import https from "https";
 import { ChatOpenAI } from "langchain/chat_models/openai";
 import { ConversationSummaryMemory } from "langchain/memory";
+import { message } from "telegraf/filters";
+
+import { OpenAI } from "langchain/llms/openai";
 import { LLMChain } from "langchain/chains";
 import { PromptTemplate } from "langchain/prompts";
 import { createClient } from "@supabase/supabase-js";
-import OpenAI from "openai";
+
+import { initializeAgentExecutorWithOptions } from "langchain/agents";
+import { SerpAPI } from "langchain/tools";
+
+import cron from "node-cron";
+
+let task = cron.schedule(
+  "0 9 * * *",
+  async () => {
+    bot.telegram.sendMessage("-1001989946156", await getNews(), {
+      message_thread_id: "4",
+    });
+  },
+  {
+    scheduled: true,
+    timezone: "Europe/Rome",
+  }
+);
+
+task.start();
 
 const openai = new OpenAI();
 
@@ -20,6 +42,7 @@ Human:
 AI:`);
 
 const app = express();
+
 const bot = new Telegraf(process.env.BOT);
 
 const model = new ChatOpenAI(
@@ -43,6 +66,19 @@ const client = createClient(
     },
   }
 );
+async function getNews() {
+  const executor = await initializeAgentExecutorWithOptions(
+    [new SerpAPI()],
+    new ChatOpenAI({ modelName: "gpt-4-0613" }),
+    {
+      agentType: "openai-functions",
+    }
+  );
+
+  return await executor.run(
+    "Give me the most important news in the crypto world, with their respective sources"
+  );
+}
 
 async function makeChatCompletion(message) {
   let res = await client.from("chats").select("*").eq("id", message.chat.id);
@@ -75,9 +111,23 @@ async function makeChatCompletion(message) {
     .select();
   return res1;
 }
+
+// id group chat  -1001989946156
+//bot.sendMessage("-1001989946156",text,{reply_to_message_id: ctx.message_id})
+
+/* bot.use(async (ctx, next) => {
+  await next();
+}); */
+
 bot.start((ctx) => ctx.reply("Welcome"));
 
-bot.on("text", (ctx) => {
+//bot.telegram.sendMessage("-1001989946156","test to topic",{message_thread_id: "4"})
+
+bot.command("news", async (ctx) => {
+  ctx.reply(await getNews());
+});
+
+bot.on(message("text"), (ctx) => {
   ctx.persistentChatAction("typing", async () => {
     const chatCompletionResponse = await makeChatCompletion(ctx.update.message);
     ctx.reply(chatCompletionResponse);
@@ -95,7 +145,6 @@ bot.on("voice", async (context) => {
     await new Promise((resolve, reject) => {
       https.get(fileLink.href, (response) => {
         if (response.statusCode !== 200) {
-          clearInterval(typingInterval);
           reject(new Error(`Error en la solicitud: ${response.statusCode}`));
           return;
         }
@@ -105,7 +154,6 @@ bot.on("voice", async (context) => {
 
         writeStream.on("finish", resolve);
         writeStream.on("error", (err) => {
-          clearInterval(typingInterval);
           reject(err);
         });
       });
@@ -143,7 +191,13 @@ bot.launch();
 } */
 
 // Enable graceful stop
-process.once("SIGINT", () => bot.stop("SIGINT"));
-process.once("SIGTERM", () => bot.stop("SIGTERM"));
+process.once("SIGINT", () => {
+  bot.stop("SIGINT");
+  task.stop();
+});
+process.once("SIGTERM", () => {
+  bot.stop("SIGTERM");
+  task.stop();
+});
 
 app.listen(process.env.PORT || 3000, () => console.log("Listening server"));
