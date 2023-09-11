@@ -76,7 +76,7 @@ async function getNews() {
   );
 
   return await executor.run(
-    "Give me the most important news in the crypto world, with their respective sources"
+    "Dame las últimas noticias de hoy más relevantes del mundo crypto, respóndeme solo con una lista con títulos y descripción resumida y un link de referencia que me lleve a leer cada una"
   );
 }
 
