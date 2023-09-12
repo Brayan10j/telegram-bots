@@ -18,9 +18,6 @@ import { SerpAPI } from "langchain/tools";
 import cron from "node-cron";
 import OpenAI from "openai";
 
-
-
-
 let task = cron.schedule(
   "0 9 * * *",
   async () => {
@@ -37,9 +34,6 @@ let task = cron.schedule(
 task.start();
 
 const openai = new OpenAI();
-
-
-
 
 const prompt = PromptTemplate.fromTemplate(`
 Conversation history:
@@ -87,6 +81,14 @@ async function getNews() {
   );
 }
 
+async function access() {
+  let res = await client
+    .from("chats")
+    .select("*")
+    .eq("username", ctx.update.message.chat.username);
+  return res.data.length > 0 && res.data[0].access;
+}
+
 async function makeChatCompletion(message) {
   let res = await client.from("chats").select("*").eq("id", message.chat.id);
 
@@ -113,6 +115,7 @@ async function makeChatCompletion(message) {
       {
         id: message.chat.id,
         history: temp.history,
+        requests: res.data[0].requests + 1,
       },
     ])
     .select();
@@ -123,10 +126,20 @@ async function makeChatCompletion(message) {
 //bot.sendMessage("-1001989946156",text,{reply_to_message_id: ctx.message_id})
 
 /* bot.use(async (ctx, next) => {
-  await next();
+  let res = await client
+    .from("chats")
+    .select("*")
+    .eq("id", ctx.update.message.chat.id);
+  if (res.data.length > 0 && res.data[0].access) {
+    await next();
+  } else {
+    ctx.reply(" you haven't access");
+  }
 }); */
 
-bot.start((ctx) => ctx.reply("Welcome"));
+bot.start((ctx) => {
+  ctx.reply("Welcome");
+});
 
 //bot.telegram.sendMessage("-1001989946156","test to topic",{message_thread_id: "4"})
 
@@ -165,7 +178,7 @@ bot.on("voice", async (context) => {
         });
       });
     });
-    
+
     const resp = await openai.audio.transcriptions.create({
       model: "whisper-1",
       file: fs.createReadStream("salida.ogg"),
