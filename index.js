@@ -7,7 +7,7 @@ import { ChatOpenAI } from "langchain/chat_models/openai";
 import { ConversationSummaryMemory } from "langchain/memory";
 import { message } from "telegraf/filters";
 
-import { OpenAI } from "langchain/llms/openai";
+//import { OpenAI } from "langchain/llms/openai";
 import { LLMChain } from "langchain/chains";
 import { PromptTemplate } from "langchain/prompts";
 import { createClient } from "@supabase/supabase-js";
@@ -16,6 +16,10 @@ import { initializeAgentExecutorWithOptions } from "langchain/agents";
 import { SerpAPI } from "langchain/tools";
 
 import cron from "node-cron";
+import OpenAI from "openai";
+
+
+
 
 let task = cron.schedule(
   "0 9 * * *",
@@ -33,6 +37,9 @@ let task = cron.schedule(
 task.start();
 
 const openai = new OpenAI();
+
+
+
 
 const prompt = PromptTemplate.fromTemplate(`
 Conversation history:
@@ -158,7 +165,7 @@ bot.on("voice", async (context) => {
         });
       });
     });
-
+    
     const resp = await openai.audio.transcriptions.create({
       model: "whisper-1",
       file: fs.createReadStream("salida.ogg"),
