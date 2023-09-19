@@ -81,7 +81,7 @@ async function getNews() {
   );
 }
 
-async function access() {
+async function access(ctx) {
   let res = await client
     .from("chats")
     .select("*")
@@ -90,7 +90,10 @@ async function access() {
 }
 
 async function makeChatCompletion(message) {
-  let res = await client.from("chats").select("*").eq("id", message.chat.id);
+  let res = await client
+    .from("chats")
+    .select("*")
+    .eq("username", message.chat.username);
 
   const memory = new ConversationSummaryMemory({
     llm: new ChatOpenAI({ temperature: 0 }),
@@ -113,7 +116,8 @@ async function makeChatCompletion(message) {
     .from("chats")
     .upsert([
       {
-        id: message.chat.id,
+        username: message.chat.username,
+        chat_id: message.chat.id,
         history: temp.history,
         requests: res.data[0].requests + 1,
       },
@@ -147,53 +151,65 @@ bot.command("news", async (ctx) => {
   ctx.reply(await getNews());
 });
 
-bot.on(message("text"), (ctx) => {
-  ctx.persistentChatAction("typing", async () => {
-    const chatCompletionResponse = await makeChatCompletion(ctx.update.message);
-    ctx.reply(chatCompletionResponse);
-  });
+bot.on(message("text"), async (ctx) => {
+  let x = await access(ctx)
+  if (x) {
+    ctx.persistentChatAction("typing", async () => {
+      const chatCompletionResponse = await makeChatCompletion(
+        ctx.update.message
+      );
+      ctx.reply(chatCompletionResponse);
+    });
+  } else {
+    ctx.reply("you haven't access ");
+  }
 });
 
 bot.on("voice", async (context) => {
-  const chatId = context.update.message.chat.id;
+  let x = await access(ctx)
+  if (x) {
+    const chatId = context.update.message.chat.id;
 
-  context.persistentChatAction("typing", async () => {
-    const fileLink = await bot.telegram.getFileLink(
-      context.message.voice.file_id
-    );
+    context.persistentChatAction("typing", async () => {
+      const fileLink = await bot.telegram.getFileLink(
+        context.message.voice.file_id
+      );
 
-    await new Promise((resolve, reject) => {
-      https.get(fileLink.href, (response) => {
-        if (response.statusCode !== 200) {
-          reject(new Error(`Error en la solicitud: ${response.statusCode}`));
-          return;
-        }
+      await new Promise((resolve, reject) => {
+        https.get(fileLink.href, (response) => {
+          if (response.statusCode !== 200) {
+            reject(new Error(`Error en la solicitud: ${response.statusCode}`));
+            return;
+          }
 
-        const writeStream = fs.createWriteStream("salida.ogg");
-        response.pipe(writeStream);
+          const writeStream = fs.createWriteStream("salida.ogg");
+          response.pipe(writeStream);
 
-        writeStream.on("finish", resolve);
-        writeStream.on("error", (err) => {
-          reject(err);
+          writeStream.on("finish", resolve);
+          writeStream.on("error", (err) => {
+            reject(err);
+          });
         });
       });
-    });
 
-    const resp = await openai.audio.transcriptions.create({
-      model: "whisper-1",
-      file: fs.createReadStream("salida.ogg"),
-    });
+      const resp = await openai.audio.transcriptions.create({
+        model: "whisper-1",
+        file: fs.createReadStream("salida.ogg"),
+      });
 
-    const completionResponse = await makeChatCompletion({
-      chat: {
-        id: chatId,
-      },
-      text: resp.text,
-    });
+      const completionResponse = await makeChatCompletion({
+        chat: {
+          id: chatId,
+        },
+        text: resp.text,
+      });
 
-    context.reply(completionResponse.text);
-    console.log("Archivo guardado correctamente en: salida.ogg");
-  });
+      context.reply(completionResponse.text);
+      console.log("Archivo guardado correctamente en: salida.ogg");
+    });
+  } else {
+    context.reply("you haven't access ");
+  }
 });
 
 bot.launch();
