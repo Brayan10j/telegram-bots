@@ -19,12 +19,28 @@ import cron from "node-cron";
 import OpenAI from "openai";
 import Parser from "rss-parser";
 
-/* let task = cron.schedule(
+let task = cron.schedule(
   "0 9 * * *",
   async () => {
-    bot.telegram.sendMessage("-1001989946156", await getNews(), {
-      message_thread_id: "4",
-    });
+    const news = await getNews();
+    for (let index = 0; index < 10; index++) {
+      const element = news[index];
+      bot.telegram.sendMessage(
+        "-1001989946156",
+        "📢 " + element.title + " 📢 " + "\n" + "\n" + element.content,
+        {
+          message_thread_id: "4",
+          reply_markup: {
+            inline_keyboard: [
+              /* Inline buttons. 2 side-by-side */
+              [Markup.button.url("Link", element.link)],
+
+              /* One button */
+            ],
+          },
+        }
+      );
+    }
   },
   {
     scheduled: true,
@@ -32,7 +48,7 @@ import Parser from "rss-parser";
   }
 );
 
-task.start(); */
+task.start();
 
 const openai = new OpenAI();
 
@@ -159,10 +175,20 @@ bot.command("news", async (ctx) => {
   const news = await getNews();
   for (let index = 0; index < 10; index++) {
     const element = news[index];
-    ctx.replyWithHTML(
+    ctx.reply("📢 " + element.title + " 📢 " + "\n" + "\n" + element.content, {
+      reply_markup: {
+        inline_keyboard: [
+          /* Inline buttons. 2 side-by-side */
+          [Markup.button.url("Link", element.link)],
+
+          /* One button */
+        ],
+      },
+    });
+    /* ctx.replyWithHTML(
       "📢 " + element.title + " 📢 " + "\n" + "\n" + element.content,
       Markup.inlineKeyboard([[Markup.button.url("Link", element.link)]])
-    );
+    ); */
   }
 });
 
