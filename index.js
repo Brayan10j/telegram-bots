@@ -1,6 +1,6 @@
 import express from "express";
 import "dotenv/config";
-import { Telegraf, session } from "telegraf";
+import { Telegraf, Markup } from "telegraf";
 import fs from "fs";
 import https from "https";
 import { ChatOpenAI } from "langchain/chat_models/openai";
@@ -17,8 +17,9 @@ import { SerpAPI } from "langchain/tools";
 
 import cron from "node-cron";
 import OpenAI from "openai";
+import Parser from "rss-parser";
 
-let task = cron.schedule(
+/* let task = cron.schedule(
   "0 9 * * *",
   async () => {
     bot.telegram.sendMessage("-1001989946156", await getNews(), {
@@ -31,7 +32,7 @@ let task = cron.schedule(
   }
 );
 
-task.start();
+task.start(); */
 
 const openai = new OpenAI();
 
@@ -68,7 +69,14 @@ const client = createClient(
   }
 );
 async function getNews() {
-  const executor = await initializeAgentExecutorWithOptions(
+  const parser = new Parser();
+  let feed = await parser.parseURL(
+    "https://www.coindesk.com/arc/outboundfeeds/rss"
+  );
+
+  return feed.items;
+
+  /* const executor = await initializeAgentExecutorWithOptions(
     [new SerpAPI()],
     new ChatOpenAI({ modelName: "gpt-4-0613" }),
     {
@@ -78,7 +86,7 @@ async function getNews() {
 
   return await executor.run(
     "Dame las últimas noticias de hoy más relevantes del mundo crypto, respóndeme solo con una lista con títulos y descripción resumida y un link de referencia que me lleve a leer cada una"
-  );
+  ); */
 }
 
 async function access(ctx) {
@@ -148,11 +156,18 @@ bot.start((ctx) => {
 //bot.telegram.sendMessage("-1001989946156","test to topic",{message_thread_id: "4"})
 
 bot.command("news", async (ctx) => {
-  ctx.reply(await getNews());
+  const news = await getNews();
+  for (let index = 0; index < 10; index++) {
+    const element = news[index];
+    ctx.replyWithHTML(
+      "📢 " + element.title + " 📢 " + "\n" + "\n" + element.content,
+      Markup.inlineKeyboard([[Markup.button.url("Link", element.link)]])
+    );
+  }
 });
 
 bot.on(message("text"), async (ctx) => {
-  let x = await access(ctx)
+  let x = await access(ctx);
   if (x) {
     ctx.persistentChatAction("typing", async () => {
       const chatCompletionResponse = await makeChatCompletion(
@@ -166,7 +181,7 @@ bot.on(message("text"), async (ctx) => {
 });
 
 bot.on("voice", async (context) => {
-  let x = await access(ctx)
+  let x = await access(ctx);
   if (x) {
     const chatId = context.update.message.chat.id;
 
