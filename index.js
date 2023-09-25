@@ -207,7 +207,7 @@ bot.on(message("text"), async (ctx) => {
 });
 
 bot.on("voice", async (context) => {
-  let x = await access(ctx);
+  let x = await access(context);
   if (x) {
     const chatId = context.update.message.chat.id;
 
@@ -241,6 +241,7 @@ bot.on("voice", async (context) => {
       const completionResponse = await makeChatCompletion({
         chat: {
           id: chatId,
+          username: context.update.message.chat.username
         },
         text: resp.text,
       });
