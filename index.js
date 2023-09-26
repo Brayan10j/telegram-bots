@@ -12,9 +12,6 @@ import { LLMChain } from "langchain/chains";
 import { PromptTemplate } from "langchain/prompts";
 import { createClient } from "@supabase/supabase-js";
 
-import { initializeAgentExecutorWithOptions } from "langchain/agents";
-import { SerpAPI } from "langchain/tools";
-
 import cron from "node-cron";
 import OpenAI from "openai";
 import Parser from "rss-parser";
@@ -52,7 +49,7 @@ task.start();
 
 const openai = new OpenAI();
 
-const prompt = PromptTemplate.fromTemplate(`
+const prompt = PromptTemplate.fromTemplate(`The following is a friendly conversation between a human and an AI. AI prioritizes responding quickly.
 Conversation history:
 {history}
 Human: 
@@ -64,7 +61,11 @@ const app = express();
 const bot = new Telegraf(process.env.BOT);
 
 const model = new ChatOpenAI(
-  {} /* ,
+  {
+    modelName: "gpt-3.5-turbo",
+    temperature: 0.2,
+    maxTokens: 100,
+  } /* ,
   {
     basePath: "https://oai.hconeai.com/v1",
     baseOptions: {
@@ -118,23 +119,22 @@ async function makeChatCompletion(message) {
     .from("chats")
     .select("*")
     .eq("username", message.chat.username);
-
   const memory = new ConversationSummaryMemory({
-    llm: new ChatOpenAI({ temperature: 0 }),
+    llm: new ChatOpenAI({ temperature: 0.2 }),
   });
-
   if (res.data.length > 0) {
-    const history = res.data[0].history;
     await memory.saveContext(
-      { input: history },
+      { input: res.data[0].history },
       { output: "conversation history" }
     );
   }
+  
 
   const chain = new LLMChain({ llm: model, prompt, memory });
   const res1 = await chain.call({
     input: message.text,
   });
+
   const temp = await memory.loadMemoryVariables({});
   await client
     .from("chats")
@@ -241,13 +241,12 @@ bot.on("voice", async (context) => {
       const completionResponse = await makeChatCompletion({
         chat: {
           id: chatId,
-          username: context.update.message.chat.username
+          username: context.update.message.chat.username,
         },
         text: resp.text,
       });
 
       context.reply(completionResponse.text);
-      console.log("Archivo guardado correctamente en: salida.ogg");
     });
   } else {
     context.reply("you haven't access ");
