@@ -6,6 +6,7 @@ import https from "https";
 import { ChatOpenAI } from "langchain/chat_models/openai";
 import { ConversationSummaryMemory } from "langchain/memory";
 import { message } from "telegraf/filters";
+import translate from "translate-google";
 
 //import { OpenAI } from "langchain/llms/openai";
 import { LLMChain } from "langchain/chains";
@@ -22,15 +23,17 @@ let task = cron.schedule(
     const news = await getNews();
     for (let index = 0; index < 10; index++) {
       const element = news[index];
+      const tituloTraducido = await translate(element.title, { to: "it" });
+      const contenidoTraducido = await translate(element.content, { to: "it" });
       bot.telegram.sendMessage(
         "-1001989946156",
-        "📢 " + element.title + " 📢 " + "\n" + "\n" + element.content,
+        "📢 " + tituloTraducido + " 📢 " + "\n" + "\n" + contenidoTraducido,
         {
           message_thread_id: "4",
           reply_markup: {
             inline_keyboard: [
               /* Inline buttons. 2 side-by-side */
-              [Markup.button.url("Link", element.link)],
+              [Markup.button.url("Collegamento", element.link)],
 
               /* One button */
             ],
@@ -49,7 +52,8 @@ task.start();
 
 const openai = new OpenAI();
 
-const prompt = PromptTemplate.fromTemplate(`The following is a friendly conversation between a human and an AI. AI prioritizes responding quickly.
+const prompt =
+  PromptTemplate.fromTemplate(`The following is a friendly conversation between a human and an AI. AI prioritizes responding quickly.
 Conversation history:
 {history}
 Human: 
@@ -62,9 +66,8 @@ const bot = new Telegraf(process.env.BOT);
 
 const model = new ChatOpenAI(
   {
-    modelName: "gpt-3.5-turbo",
+    modelName: "gpt-4",
     temperature: 0.2,
-    maxTokens: 100,
   } /* ,
   {
     basePath: "https://oai.hconeai.com/v1",
@@ -85,6 +88,13 @@ const client = createClient(
     },
   }
 );
+
+//https://www.coindesk.com/arc/outboundfeeds/rss
+//https://cryptopotato.com/feed/
+//https://crypto.news/feed/
+//https://news.bitcoin.com/rss
+
+//https://rss.app/feeds/mRsemwyw07GMBkZ7.xml
 async function getNews() {
   const parser = new Parser();
   let feed = await parser.parseURL(
@@ -128,7 +138,6 @@ async function makeChatCompletion(message) {
       { output: "conversation history" }
     );
   }
-  
 
   const chain = new LLMChain({ llm: model, prompt, memory });
   const res1 = await chain.call({
@@ -165,8 +174,9 @@ async function makeChatCompletion(message) {
   }
 }); */
 
-bot.start((ctx) => {
+bot.start(async (ctx) => {
   ctx.reply("Welcome");
+  //ctx.reply(tituloTraducido)
 });
 
 //bot.telegram.sendMessage("-1001989946156","test to topic",{message_thread_id: "4"})
@@ -175,16 +185,21 @@ bot.command("news", async (ctx) => {
   const news = await getNews();
   for (let index = 0; index < 10; index++) {
     const element = news[index];
-    ctx.reply("📢 " + element.title + " 📢 " + "\n" + "\n" + element.content, {
-      reply_markup: {
-        inline_keyboard: [
-          /* Inline buttons. 2 side-by-side */
-          [Markup.button.url("Link", element.link)],
+    const tituloTraducido = await translate(element.title, { to: "it" });
+    const contenidoTraducido = await translate(element.content, { to: "it" });
+    ctx.reply(
+      "📢 " + tituloTraducido + " 📢 " + "\n" + "\n" + contenidoTraducido,
+      {
+        reply_markup: {
+          inline_keyboard: [
+            /* Inline buttons. 2 side-by-side */
+            [Markup.button.url("Collegamento", element.link)],
 
-          /* One button */
-        ],
-      },
-    });
+            /* One button */
+          ],
+        },
+      }
+    );
     /* ctx.replyWithHTML(
       "📢 " + element.title + " 📢 " + "\n" + "\n" + element.content,
       Markup.inlineKeyboard([[Markup.button.url("Link", element.link)]])
