@@ -20,11 +20,18 @@ import Parser from "rss-parser";
 let task = cron.schedule(
   "0 9 * * *",
   async () => {
-    const news = await getNews();
+    try {
+      const news = await getNews();
     for (let index = 0; index < 10; index++) {
       const element = news[index];
-      const tituloTraducido = await translate(element.title, { to: "it" });
-      const contenidoTraducido = await translate(element.content, { to: "it" });
+      const tituloTraducido =
+        element.title !== ""
+          ? await translate(element.title, { to: "it" })
+          : " ";
+      const contenidoTraducido =
+        element.content !== ""
+          ? await translate(element.content, { to: "it" })
+          : " ";
       bot.telegram.sendMessage(
         "-1001989946156",
         "📢 " + tituloTraducido + " 📢 " + "\n" + "\n" + contenidoTraducido,
@@ -41,6 +48,10 @@ let task = cron.schedule(
         }
       );
     }
+    } catch (error) {
+      console.log(error)
+    }
+    
   },
   {
     scheduled: true,
@@ -182,28 +193,32 @@ bot.start(async (ctx) => {
 //bot.telegram.sendMessage("-1001989946156","test to topic",{message_thread_id: "4"})
 
 bot.command("news", async (ctx) => {
-  const news = await getNews();
-  for (let index = 0; index < 10; index++) {
-    const element = news[index];
-    const tituloTraducido = await translate(element.title, { to: "it" });
-    const contenidoTraducido = await translate(element.content, { to: "it" });
-    ctx.reply(
-      "📢 " + tituloTraducido + " 📢 " + "\n" + "\n" + contenidoTraducido,
-      {
-        reply_markup: {
-          inline_keyboard: [
-            /* Inline buttons. 2 side-by-side */
-            [Markup.button.url("Collegamento", element.link)],
+  try {
+    const news = await getNews();
+    for (let index = 0; index < 10; index++) {
+      const element = news[index];
+      const tituloTraducido =
+        element.title !== ""
+          ? await translate(element.title, { to: "it" })
+          : " ";
+      const contenidoTraducido =
+        element.content !== ""
+          ? await translate(element.content, { to: "it" })
+          : " ";
 
-            /* One button */
-          ],
-        },
-      }
-    );
-    /* ctx.replyWithHTML(
-      "📢 " + element.title + " 📢 " + "\n" + "\n" + element.content,
-      Markup.inlineKeyboard([[Markup.button.url("Link", element.link)]])
-    ); */
+      ctx.reply(
+        "📢 " + tituloTraducido + " 📢 " + "\n" + "\n" + contenidoTraducido,
+        {
+          reply_markup: {
+            inline_keyboard: [
+              [Markup.button.url("Collegamento", element.link)],
+            ],
+          },
+        }
+      );
+    }
+  } catch (error) {
+    console.log(error);
   }
 });
 
