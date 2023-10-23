@@ -127,7 +127,8 @@ async function access(ctx) {
 }
 
 async function makeChatCompletion(message) {
-  let res = await client
+  try {
+    let res = await client
     .from("chats")
     .select("*")
     .eq("username", message.chat.username);
@@ -158,7 +159,13 @@ async function makeChatCompletion(message) {
       },
     ])
     .select();
-  return res1;
+    return res1;
+  } catch (error) {
+    console.log(error)
+    return error
+  }
+  
+  
 }
 
 // id group chat  -1001989946156
