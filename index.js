@@ -130,12 +130,9 @@ async function makeChatCompletion(message) {
       .from("chats")
       .select("*")
       .eq("username", message.chat.username);
-    
-      console.log("error db")
     const memory = new ConversationSummaryMemory({
       llm: new ChatOpenAI({ temperature: 0.2 }),
     });
-    console.log("error changlain")
     if (res.data.length > 0) {
       await memory.saveContext(
         { input: res.data[0].history },
@@ -221,10 +218,8 @@ bot.command("news", async (ctx) => {
 });
 
 bot.on(message("text"), async (ctx) => {
-  console.log("text")
-  //let x = await access(ctx);
-  //console.log(x)
-  if (true) {
+  let x = await access(ctx);
+  if (x) {
     ctx.persistentChatAction("typing", async () => {
       const chatCompletionResponse = await makeChatCompletion(
         ctx.update.message
