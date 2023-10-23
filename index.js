@@ -190,7 +190,7 @@ bot.command("db", async (ctx) => {
     });
     const chain = new LLMChain({ llm: model, prompt, memory });
     const res1 = await chain.call({
-      input: ctx.update.message.text,
+      input: "que son las montañas",
     });
     ctx.reply(res1);
   } catch (error) {
