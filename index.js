@@ -22,39 +22,36 @@ let task = cron.schedule(
   async () => {
     try {
       const news = await getNews();
-    for (let index = 0; index < 10; index++) {
-      const element = news[index];
-      const tituloTraducido =
-        element.title !== ""
-          ? await translate(element.title, { to: "it" })
-          : " ";
-      const contenidoTraducido =
-        element.content !== ""
-          ? await translate(element.content, { to: "it" })
-          : " ";
-      bot.telegram.sendMessage(
-        "-1001989946156",
-        "📢 " + tituloTraducido + " 📢 " + "\n" + "\n" + contenidoTraducido,
-        {
-          message_thread_id: "4",
-          reply_markup: {
-            inline_keyboard: [
-              /* Inline buttons. 2 side-by-side */
-              [Markup.button.url("Collegamento", element.link)],
+      for (let index = 0; index < 10; index++) {
+        const element = news[index];
+        const tituloTraducido =
+          element.title !== ""
+            ? await translate(element.title, { to: "it" })
+            : " ";
+        const contenidoTraducido =
+          element.content !== ""
+            ? await translate(element.content, { to: "it" })
+            : " ";
+        bot.telegram.sendMessage(
+          "-1001989946156",
+          "📢 " + tituloTraducido + " 📢 " + "\n" + "\n" + contenidoTraducido,
+          {
+            message_thread_id: "4",
+            reply_markup: {
+              inline_keyboard: [
+                /* Inline buttons. 2 side-by-side */
+                [Markup.button.url("Collegamento", element.link)],
 
-              /* One button */
-            ],
-          },
-        }
-      );
-    }
+                /* One button */
+              ],
+            },
+          }
+        );
+      }
     } catch (error) {
-      console.log(error)
-      bot.telegram.sendMessage(
-        "-1001989946156",
-        "Error : "+ error)
+      console.log(error);
+      bot.telegram.sendMessage("-1001989946156", "Error : " + error);
     }
-    
   },
   {
     scheduled: true,
@@ -129,43 +126,42 @@ async function access(ctx) {
 async function makeChatCompletion(message) {
   try {
     let res = await client
-    .from("chats")
-    .select("*")
-    .eq("username", message.chat.username);
-  const memory = new ConversationSummaryMemory({
-    llm: new ChatOpenAI({ temperature: 0.2 }),
-  });
-  if (res.data.length > 0) {
-    await memory.saveContext(
-      { input: res.data[0].history },
-      { output: "conversation history" }
-    );
-  }
+      .from("chats")
+      .select("*")
+      .eq("username", message.chat.username);
+    console.log(res);
+    const memory = new ConversationSummaryMemory({
+      llm: new ChatOpenAI({ temperature: 0.2 }),
+    });
+    if (res.data.length > 0) {
+      await memory.saveContext(
+        { input: res.data[0].history },
+        { output: "conversation history" }
+      );
+    }
 
-  const chain = new LLMChain({ llm: model, prompt, memory });
-  const res1 = await chain.call({
-    input: message.text,
-  });
+    const chain = new LLMChain({ llm: model, prompt, memory });
+    const res1 = await chain.call({
+      input: message.text,
+    });
 
-  const temp = await memory.loadMemoryVariables({});
-  await client
-    .from("chats")
-    .upsert([
-      {
-        username: message.chat.username,
-        chat_id: message.chat.id,
-        history: temp.history,
-        requests: res.data[0].requests + 1,
-      },
-    ])
-    .select();
+    const temp = await memory.loadMemoryVariables({});
+    await client
+      .from("chats")
+      .upsert([
+        {
+          username: message.chat.username,
+          chat_id: message.chat.id,
+          history: temp.history,
+          requests: res.data[0].requests + 1,
+        },
+      ])
+      .select();
     return res1;
   } catch (error) {
-    console.log(error)
-    return error
+    console.log(error);
+    return error;
   }
-  
-  
 }
 
 // id group chat  -1001989946156
@@ -217,9 +213,7 @@ bot.command("news", async (ctx) => {
     }
   } catch (error) {
     console.log(error);
-    ctx.reply(
-      "-1001989946156",
-      "Error : "+ error)
+    ctx.reply("-1001989946156", "Error : " + error);
   }
 });
 
