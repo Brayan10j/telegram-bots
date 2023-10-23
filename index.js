@@ -187,6 +187,7 @@ bot.start(async (ctx) => {
 //bot.telegram.sendMessage("-1001989946156","test to topic",{message_thread_id: "4"})
 
 bot.command("news", async (ctx) => {
+  console.log("entra news")
   try {
     const news = await getNews();
     for (let index = 0; index < 10; index++) {
@@ -218,6 +219,7 @@ bot.command("news", async (ctx) => {
 });
 
 bot.on(message("text"), async (ctx) => {
+  console.log("text")
   let x = await access(ctx);
   console.log(x)
   if (x) {
