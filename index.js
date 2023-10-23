@@ -125,11 +125,11 @@ async function access(ctx) {
 
 async function makeChatCompletion(message) {
   try {
+    console.log("entra")
     let res = await client
       .from("chats")
       .select("*")
       .eq("username", message.chat.username);
-    console.log(res);
     const memory = new ConversationSummaryMemory({
       llm: new ChatOpenAI({ temperature: 0.2 }),
     });
@@ -219,6 +219,7 @@ bot.command("news", async (ctx) => {
 
 bot.on(message("text"), async (ctx) => {
   let x = await access(ctx);
+  console.log(x)
   if (x) {
     ctx.persistentChatAction("typing", async () => {
       const chatCompletionResponse = await makeChatCompletion(
