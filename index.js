@@ -125,7 +125,6 @@ async function access(ctx) {
 
 async function makeChatCompletion(message) {
   try {
-    
     let res = await client
       .from("chats")
       .select("*")
@@ -186,15 +185,17 @@ bot.start(async (ctx) => {
 
 bot.command("db", async (ctx) => {
   try {
-    let {data } = await client
-    .from("chats")
-    .select("*")
-    .eq("username", ctx.update.message.chat.username);
-  ctx.reply("prueba de db" + JSON.stringify(data))
+    const memory = new ConversationSummaryMemory({
+      llm: new ChatOpenAI({ temperature: 0.2 }),
+    });
+    const chain = new LLMChain({ llm: model, prompt, memory });
+    const res1 = await chain.call({
+      input: ctx.update.message.text,
+    });
+    ctx.reply(res1);
   } catch (error) {
-    console.log(error)
+    console.log(error);
   }
-
 });
 
 //bot.telegram.sendMessage("-1001989946156","test to topic",{message_thread_id: "4"})
