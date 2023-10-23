@@ -50,6 +50,9 @@ let task = cron.schedule(
     }
     } catch (error) {
       console.log(error)
+      bot.telegram.sendMessage(
+        "-1001989946156",
+        "Error : "+ error)
     }
     
   },
@@ -219,6 +222,9 @@ bot.command("news", async (ctx) => {
     }
   } catch (error) {
     console.log(error);
+    ctx.reply(
+      "-1001989946156",
+      "Error : "+ error)
   }
 });
 
