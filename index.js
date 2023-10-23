@@ -125,14 +125,17 @@ async function access(ctx) {
 
 async function makeChatCompletion(message) {
   try {
-    console.log("entra")
+    
     let res = await client
       .from("chats")
       .select("*")
       .eq("username", message.chat.username);
+    
+      console.log("error db")
     const memory = new ConversationSummaryMemory({
       llm: new ChatOpenAI({ temperature: 0.2 }),
     });
+    console.log("error changlain")
     if (res.data.length > 0) {
       await memory.saveContext(
         { input: res.data[0].history },
