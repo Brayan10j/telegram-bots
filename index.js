@@ -184,6 +184,19 @@ bot.start(async (ctx) => {
   //ctx.reply(tituloTraducido)
 });
 
+bot.command("db", async (ctx) => {
+  try {
+    let res = await client
+    .from("chats")
+    .select("*")
+    .eq("username", ctx.update.message.chat.username);
+  ctx.reply(res)
+  } catch (error) {
+    console.log(error)
+  }
+
+});
+
 //bot.telegram.sendMessage("-1001989946156","test to topic",{message_thread_id: "4"})
 
 bot.command("news", async (ctx) => {
