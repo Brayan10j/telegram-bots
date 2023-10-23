@@ -1,4 +1,4 @@
-import express from "express";
+import express, { json } from "express";
 import "dotenv/config";
 import { Telegraf, Markup } from "telegraf";
 import fs from "fs";
@@ -186,11 +186,11 @@ bot.start(async (ctx) => {
 
 bot.command("db", async (ctx) => {
   try {
-    let res = await client
+    let {data } = await client
     .from("chats")
     .select("*")
     .eq("username", ctx.update.message.chat.username);
-  ctx.reply(res)
+  ctx.reply("prueba de db" + JSON.stringify(data))
   } catch (error) {
     console.log(error)
   }
