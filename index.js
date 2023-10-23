@@ -116,18 +116,6 @@ async function getNews() {
   );
 
   return feed.items;
-
-  /* const executor = await initializeAgentExecutorWithOptions(
-    [new SerpAPI()],
-    new ChatOpenAI({ modelName: "gpt-4-0613" }),
-    {
-      agentType: "openai-functions",
-    }
-  );
-
-  return await executor.run(
-    "Dame las últimas noticias de hoy más relevantes del mundo crypto, respóndeme solo con una lista con títulos y descripción resumida y un link de referencia que me lleve a leer cada una"
-  ); */
 }
 
 async function access(ctx) {
@@ -189,7 +177,7 @@ async function makeChatCompletion(message) {
 }); */
 
 bot.start(async (ctx) => {
-  ctx.reply("Welcome");
+  ctx.reply("Welcome !!");
   //ctx.reply(tituloTraducido)
 });
 
