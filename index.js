@@ -163,21 +163,6 @@ async function makeChatCompletion(message) {
   }
 }
 
-// id group chat  -1001989946156
-//bot.sendMessage("-1001989946156",text,{reply_to_message_id: ctx.message_id})
-
-/* bot.use(async (ctx, next) => {
-  let res = await client
-    .from("chats")
-    .select("*")
-    .eq("id", ctx.update.message.chat.id);
-  if (res.data.length > 0 && res.data[0].access) {
-    await next();
-  } else {
-    ctx.reply(" you haven't access");
-  }
-}); */
-
 bot.start(async (ctx) => {
   ctx.reply("Welcome !!");
   //ctx.reply(tituloTraducido)
@@ -291,18 +276,7 @@ bot.on("voice", async (context) => {
 });
 
 bot.launch();
-/* if (process.env.NODE_ENV == "production") {
-  app.use(
-    await bot.createWebhook({
-      domain: "https://siontelegram-bots-352013a47d20.herokuapp.com",
-    })
-  );
-} else {
-  // if local use Long-polling
-  bot.launch().then(() => {
-    console.info(`The bot ${bot.botInfo.username} is running locally`);
-  });
-} */
+
 
 // Enable graceful stop
 process.once("SIGINT", () => {
