@@ -185,14 +185,12 @@ bot.start(async (ctx) => {
 
 bot.command("db", async (ctx) => {
   try {
-    const memory = new ConversationSummaryMemory({
-      llm: new ChatOpenAI({ temperature: 0.2 }),
-    });
-    const chain = new LLMChain({ llm: model, prompt, memory });
-    const res1 = await chain.call({
-      input: "que son las montañas",
-    });
-    ctx.reply(res1);
+    let {data , error } = await client
+    .from("chats")
+    .select("*")
+    .eq("username", ctx.update.message.chat.username);
+    if (error) ctx.reply(JSON.stringify(error)); else ctx.reply(JSON.stringify(data))
+    //ctx.reply(JSON.stringify(data));
   } catch (error) {
     console.log(error);
   }
