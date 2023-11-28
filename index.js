@@ -13,10 +13,40 @@ import { LLMChain } from "langchain/chains";
 import { PromptTemplate } from "langchain/prompts";
 import { createClient } from "@supabase/supabase-js";
 
+import { Client, auth } from "twitter-api-sdk";
+
 import cron from "node-cron";
 import OpenAI from "openai";
 import Parser from "rss-parser";
 
+/* const authClient = new auth.OAuth2User({
+  client_id: process.env.CLIENT_ID ,
+  client_secret: process.env.CLIENT_SECRET,
+  callback: "http://127.0.0.1:3000/callback",
+  scopes: ["tweet.read", "users.read", "offline.access"],
+}); */
+const twitterClient = new Client(
+  "AAAAAAAAAAAAAAAAAAAAAHj%2BrAEAAAAA7sOutU7J3Fg3nb%2F%2FXqaYU38EKE4%3Du0ULQuZPSYIzNyeztYdAOV15Qtv24NbwibZx4oMJR5doCzhJe0"
+);
+
+/* (async () => {
+  try {
+    const usernameLookup = await twitterClient.users.findUserByUsername(
+      //The Twitter username (handle) of the user.
+      "TwitterDev"
+    );
+    console.dir(usernameLookup, {
+      depth: null,
+    });
+  } catch (error) {
+    console.log(error);
+  }
+})(); */
+
+/* /* const { data } = await twitterClient.users.findUserByUsername("TwitterDev");
+if (!data) throw new Error("Couldn't find user");
+; */
+//const tweet = await clientX.tweets.findTweetById("20");
 let task = cron.schedule(
   "0 9 * * *",
   async () => {
@@ -106,13 +136,23 @@ const client = createClient(
 //https://news.bitcoin.com/rss
 
 //https://rss.app/feeds/mRsemwyw07GMBkZ7.xml
+
+const sitiosWeb = [
+  "https://www.coindesk.com/arc/outboundfeeds/rss",
+  "https://cryptobriefing.com/feed/",
+];
 async function getNews() {
   const parser = new Parser();
-  let feed = await parser.parseURL(
-    "https://www.coindesk.com/arc/outboundfeeds/rss"
-  );
-
-  return feed.items;
+  const noticias = [];
+  for (const sitio of sitiosWeb) {
+    try {
+      const feed = await parser.parseURL(sitio);
+      noticias.push(...feed.items);
+    } catch (error) {
+      console.error(`Error al obtener noticias de ${sitio}: ${error}`);
+    }
+  }
+  return noticias;
 }
 
 async function access(ctx) {
@@ -168,24 +208,31 @@ bot.start(async (ctx) => {
   //ctx.reply(tituloTraducido)
 });
 
-bot.command("db", async (ctx) => {
+bot.command("analize", async (ctx) => {
   try {
-    let {data , error } = await client
-    .from("chats")
-    .select("*")
-    .eq("username", ctx.update.message.chat.username);
-    if (error) ctx.reply(JSON.stringify(error)); else ctx.reply(JSON.stringify(data))
-    //ctx.reply(JSON.stringify(data));
+    let resutl = ctx.update.message.text.split(" ");
+    const tweets = await twitterClient.tweets.findTweetById(resutl[1]);
+    ctx.reply(tweets.data.text);
+    const completion = await openai.chat.completions.create({
+      messages: [
+        { role: "system", content: "You are an assistant analyzing tweets related to cryptocurrencies and your response should only be Buy or NULL, do not add anything else." },
+        {
+          role: "user",
+          content: `I need you to analyze the following tweet that a trader made so that you can help me interpret it, if he is talking about a crypto, I need to know if it is positive and understands that the market for that token will increase its price or negative according to your opinion, answer me alone with BUY if it is positive or NULL if it is negative, Your response should only be Buy or NULL, do not add anything else: ${tweets.data.text}`,
+        },
+      ],
+      model: "gpt-4",
+    });
+    ctx.reply(completion.choices[0].message.content);
   } catch (error) {
     console.log(error);
   }
 });
 
-//bot.telegram.sendMessage("-1001989946156","test to topic",{message_thread_id: "4"})
-
 bot.command("news", async (ctx) => {
   try {
     const news = await getNews();
+    s;
     for (let index = 0; index < 10; index++) {
       const element = news[index];
       const tituloTraducido =

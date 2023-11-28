@@ -32,6 +32,9 @@ dependencies:
   translate-google:
     specifier: ^1.5.0
     version: 1.5.0
+  twitter-api-sdk:
+    specifier: ^1.2.1
+    version: 1.2.1
 
 devDependencies:
   nodemon:
@@ -1813,6 +1816,16 @@ packages:
   /trim@0.0.1:
     resolution: {integrity: sha512-YzQV+TZg4AxpKxaTHK3c3D+kRDCGVEE7LemdlQZoQXn0iennk10RsIoY6ikzAqJTc9Xjl9C1/waHom/J86ziAQ==}
     deprecated: Use String.prototype.trim() instead
+    dev: false
+
+  /twitter-api-sdk@1.2.1:
+    resolution: {integrity: sha512-tNQ6DGYucFk94JlnUMsHCkHg5o1wnCdHh71Y2ukygNVssOdD1gNVjOpaojJrdwbEAhoZvcWdGHerCa55F8HKxQ==}
+    engines: {node: '>=14'}
+    dependencies:
+      abort-controller: 3.0.0
+      node-fetch: 2.7.0
+    transitivePeerDependencies:
+      - encoding
     dev: false
 
   /type-fest@1.4.0:
