@@ -52,6 +52,11 @@ let task = cron.schedule(
   async () => {
     try {
       const news = await getNews();
+      const tweets  = await getTweets()
+      bot.telegram.sendMessage(
+        "-1001989946156",
+        "##########NEWS##########"
+      );
       for (let index = 0; index < 10; index++) {
         const element = news[index];
         const tituloTraducido =
@@ -76,6 +81,16 @@ let task = cron.schedule(
               ],
             },
           }
+        );
+      }
+      bot.telegram.sendMessage(
+        "-1001989946156",
+        "##########TWEETS##########"
+      );
+      for (let index = 0; index < 10; index++) {
+        bot.telegram.sendMessage(
+          "-1001989946156",
+          tweets[index].text
         );
       }
     } catch (error) {
@@ -152,7 +167,25 @@ async function getNews() {
       console.error(`Error al obtener noticias de ${sitio}: ${error}`);
     }
   }
-  return noticias;
+  return noticias.sort(() => Math.random() - 0.5);
+}
+
+const idsTweets = [
+  "813674916784418817",
+  "1070099092246802432",
+];
+
+async function getTweets() {
+  const tweets = [];
+  for (const id of idsTweets) {
+    try {
+      const tweet = await twitterClient.tweets.usersIdTweets(id);
+      tweets.push(...tweet.data);
+    } catch (error) {
+      console.error(`Error al obtener tweets: ${error}`);
+    }
+  }
+  return tweets.sort(() => Math.random() - 0.5);
 }
 
 async function access(ctx) {
@@ -208,11 +241,24 @@ bot.start(async (ctx) => {
   //ctx.reply(tituloTraducido)
 });
 
-bot.command("analize", async (ctx) => {
+
+/* 
+https://twitter.com/AstrologyCrypto 813674916784418817
+https://twitter.com/SamuelXeus 1070099092246802432
+https://twitter.com/crypthoem/
+https://twitter.com/XMaximist
+https://twitter.com/crypto_condom
+https://twitter.com/deg_ape */
+
+bot.command("tweets", async (ctx) => {
   try {
-    let resutl = ctx.update.message.text.split(" ");
-    const tweets = await twitterClient.tweets.findTweetById(resutl[1]);
-    ctx.reply(tweets.data.text);
+    //let resutl = ctx.update.message.text.split(" ");
+    const tweets  = await getTweets()
+    for (let index = 0; index < 10; index++) {
+      ctx.reply(tweets[index].text)
+    }
+    //ctx.reply(tweets)
+    /* ctx.reply(tweets.data.text);
     const completion = await openai.chat.completions.create({
       messages: [
         { role: "system", content: "You are an assistant analyzing tweets related to cryptocurrencies and your response should only be Buy or NULL, do not add anything else." },
@@ -223,7 +269,7 @@ bot.command("analize", async (ctx) => {
       ],
       model: "gpt-4",
     });
-    ctx.reply(completion.choices[0].message.content);
+    ctx.reply(completion.choices[0].message.content); */
   } catch (error) {
     console.log(error);
   }
@@ -232,7 +278,6 @@ bot.command("analize", async (ctx) => {
 bot.command("news", async (ctx) => {
   try {
     const news = await getNews();
-    s;
     for (let index = 0; index < 10; index++) {
       const element = news[index];
       const tituloTraducido =
