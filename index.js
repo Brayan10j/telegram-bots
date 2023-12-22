@@ -14,6 +14,16 @@ import cron from "node-cron";
 import OpenAI from "openai";
 import Parser from "rss-parser";
 
+const client = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_KEY,
+  {
+    auth: {
+      persistSession: false,
+    },
+  }
+);
+
 let task = cron.schedule(
   "0 9 * * *",
   async () => {
@@ -75,7 +85,7 @@ const app = express();
 app.post("/endpoint", (req, res) => {
   // Acceder a los datos del cuerpo de la solicitud
   const requestData = req.body;
-  console.log(requestData)
+  console.log(req);
 
   // Realizar alguna lógica personalizada
   const responseMessage = `¡Solicitud POST atípica recibida! Datos recibidos: ${JSON.stringify(
@@ -87,7 +97,7 @@ app.post("/endpoint", (req, res) => {
 });
 
 app.get("/", function (req, res) {
-  console.log("get")
+  console.log("get");
 });
 
 const bot = new Telegraf(process.env.BOT);
@@ -105,16 +115,6 @@ const model = new ChatOpenAI(
       },
     },
   } */
-);
-
-const client = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_KEY,
-  {
-    auth: {
-      persistSession: false,
-    },
-  }
 );
 
 //https://www.coindesk.com/arc/outboundfeeds/rss
@@ -221,30 +221,6 @@ https://twitter.com/XMaximist
 https://twitter.com/crypto_condom
 https://twitter.com/deg_ape */
 
-bot.command("tweets", async (ctx) => {
-  try {
-    //let resutl = ctx.update.message.text.split(" ");
-    const tweets = await getTweets();
-    for (let index = 0; index < 10; index++) {
-      ctx.reply(tweets[index].text);
-    }
-    //ctx.reply(tweets)
-    /* ctx.reply(tweets.data.text);
-    const completion = await openai.chat.completions.create({
-      messages: [
-        { role: "system", content: "You are an assistant analyzing tweets related to cryptocurrencies and your response should only be Buy or NULL, do not add anything else." },
-        {
-          role: "user",
-          content: `I need you to analyze the following tweet that a trader made so that you can help me interpret it, if he is talking about a crypto, I need to know if it is positive and understands that the market for that token will increase its price or negative according to your opinion, answer me alone with BUY if it is positive or NULL if it is negative, Your response should only be Buy or NULL, do not add anything else: ${tweets.data.text}`,
-        },
-      ],
-      model: "gpt-4",
-    });
-    ctx.reply(completion.choices[0].message.content); */
-  } catch (error) {
-    console.log(error);
-  }
-});
 
 bot.command("news", async (ctx) => {
   try {
