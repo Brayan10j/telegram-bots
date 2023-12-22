@@ -1,62 +1,25 @@
-import express, { json } from "express";
+import express from "express";
 import "dotenv/config";
 import { Telegraf, Markup } from "telegraf";
 import fs from "fs";
 import https from "https";
 import { ChatOpenAI } from "langchain/chat_models/openai";
 import { ConversationSummaryMemory } from "langchain/memory";
-import { message } from "telegraf/filters";
 import translate from "translate-google";
-
-//import { OpenAI } from "langchain/llms/openai";
 import { LLMChain } from "langchain/chains";
 import { PromptTemplate } from "langchain/prompts";
 import { createClient } from "@supabase/supabase-js";
-
-import { Client, auth } from "twitter-api-sdk";
 
 import cron from "node-cron";
 import OpenAI from "openai";
 import Parser from "rss-parser";
 
-/* const authClient = new auth.OAuth2User({
-  client_id: process.env.CLIENT_ID ,
-  client_secret: process.env.CLIENT_SECRET,
-  callback: "http://127.0.0.1:3000/callback",
-  scopes: ["tweet.read", "users.read", "offline.access"],
-}); */
-const twitterClient = new Client(
-  "AAAAAAAAAAAAAAAAAAAAAHj%2BrAEAAAAA7sOutU7J3Fg3nb%2F%2FXqaYU38EKE4%3Du0ULQuZPSYIzNyeztYdAOV15Qtv24NbwibZx4oMJR5doCzhJe0"
-);
-
-/* (async () => {
-  try {
-    const usernameLookup = await twitterClient.users.findUserByUsername(
-      //The Twitter username (handle) of the user.
-      "TwitterDev"
-    );
-    console.dir(usernameLookup, {
-      depth: null,
-    });
-  } catch (error) {
-    console.log(error);
-  }
-})(); */
-
-/* /* const { data } = await twitterClient.users.findUserByUsername("TwitterDev");
-if (!data) throw new Error("Couldn't find user");
-; */
-//const tweet = await clientX.tweets.findTweetById("20");
 let task = cron.schedule(
   "0 9 * * *",
   async () => {
     try {
       const news = await getNews();
-      const tweets  = await getTweets()
-      bot.telegram.sendMessage(
-        "-1001989946156",
-        "##########NEWS##########"
-      );
+      bot.telegram.sendMessage("-1001989946156", "##########NEWS##########");
       for (let index = 0; index < 10; index++) {
         const element = news[index];
         const tituloTraducido =
@@ -83,16 +46,6 @@ let task = cron.schedule(
           }
         );
       }
-      bot.telegram.sendMessage(
-        "-1001989946156",
-        "##########TWEETS##########"
-      );
-      for (let index = 0; index < 10; index++) {
-        bot.telegram.sendMessage(
-          "-1001989946156",
-          tweets[index].text
-        );
-      }
     } catch (error) {
       console.log(error);
       bot.telegram.sendMessage("-1001989946156", "Error : " + error);
@@ -117,6 +70,25 @@ Human:
 AI:`);
 
 const app = express();
+
+// Endpoint POST atípico
+app.post("/endpoint", (req, res) => {
+  // Acceder a los datos del cuerpo de la solicitud
+  const requestData = req.body;
+  console.log(requestData)
+
+  // Realizar alguna lógica personalizada
+  const responseMessage = `¡Solicitud POST atípica recibida! Datos recibidos: ${JSON.stringify(
+    requestData
+  )}`;
+
+  // Enviar una respuesta personalizada
+  res.status(200).json({ message: responseMessage });
+});
+
+app.get("/", function (req, res) {
+  console.log("get")
+});
 
 const bot = new Telegraf(process.env.BOT);
 
@@ -168,24 +140,6 @@ async function getNews() {
     }
   }
   return noticias.sort(() => Math.random() - 0.5);
-}
-
-const idsTweets = [
-  "813674916784418817",
-  "1070099092246802432",
-];
-
-async function getTweets() {
-  const tweets = [];
-  for (const id of idsTweets) {
-    try {
-      const tweet = await twitterClient.tweets.usersIdTweets(id);
-      tweets.push(...tweet.data);
-    } catch (error) {
-      console.error(`Error al obtener tweets: ${error}`);
-    }
-  }
-  return tweets.sort(() => Math.random() - 0.5);
 }
 
 async function access(ctx) {
@@ -241,6 +195,23 @@ bot.start(async (ctx) => {
   //ctx.reply(tituloTraducido)
 });
 
+bot.command("getmessages", async (ctx) => {
+  try {
+    const chat = await ctx.telegram.getChat("665596324");
+    //const messages = await ctx.telegram.getChatHistory("-1001989946156", { limit: 10 }); // Obtener los últimos 10 mensajes
+    console.log(chat);
+    /*   if (messages && messages.length > 0) {
+      messages.forEach((message) => {
+        ctx.reply(`Mensaje: ${message.text}`);
+      });
+    } else {
+      ctx.reply('No se encontraron mensajes en el chat especificado.');
+    } */
+  } catch (error) {
+    console.error("Error al obtener mensajes:", error);
+    ctx.reply("Ocurrió un error al obtener mensajes.");
+  }
+});
 
 /* 
 https://twitter.com/AstrologyCrypto 813674916784418817
@@ -253,9 +224,9 @@ https://twitter.com/deg_ape */
 bot.command("tweets", async (ctx) => {
   try {
     //let resutl = ctx.update.message.text.split(" ");
-    const tweets  = await getTweets()
+    const tweets = await getTweets();
     for (let index = 0; index < 10; index++) {
-      ctx.reply(tweets[index].text)
+      ctx.reply(tweets[index].text);
     }
     //ctx.reply(tweets)
     /* ctx.reply(tweets.data.text);
@@ -302,11 +273,11 @@ bot.command("news", async (ctx) => {
     }
   } catch (error) {
     console.log(error);
-    ctx.reply("-1001989946156", "Error : " + error);
+    ctx.reply("Error : " + error);
   }
 });
 
-bot.on(message("text"), async (ctx) => {
+bot.on("message", async (ctx) => {
   let x = await access(ctx);
   if (x) {
     ctx.persistentChatAction("typing", async () => {
@@ -368,7 +339,6 @@ bot.on("voice", async (context) => {
 });
 
 bot.launch();
-
 
 // Enable graceful stop
 process.once("SIGINT", () => {
