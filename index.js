@@ -1,4 +1,5 @@
 import express from "express";
+
 import "dotenv/config";
 import { Telegraf, Markup } from "telegraf";
 import fs from "fs";
@@ -13,6 +14,7 @@ import { createClient } from "@supabase/supabase-js";
 import cron from "node-cron";
 import OpenAI from "openai";
 import Parser from "rss-parser";
+import bodyParser from "body-parser";
 
 const client = createClient(
   process.env.SUPABASE_URL,
@@ -81,11 +83,17 @@ AI:`);
 
 const app = express();
 
+//app.use(express.json);
+
+// Middleware para parsear el cuerpo de la solicitud como JSON
+app.use(bodyParser.json());
+
 // Endpoint POST atípico
 app.post("/endpoint", (req, res) => {
   // Acceder a los datos del cuerpo de la solicitud
   const requestData = req.body;
-  console.log(req);
+  //console.log(req.query);
+  console.log(req.query);
 
   // Realizar alguna lógica personalizada
   const responseMessage = `¡Solicitud POST atípica recibida! Datos recibidos: ${JSON.stringify(
@@ -220,7 +228,6 @@ https://twitter.com/crypthoem/
 https://twitter.com/XMaximist
 https://twitter.com/crypto_condom
 https://twitter.com/deg_ape */
-
 
 bot.command("news", async (ctx) => {
   try {
