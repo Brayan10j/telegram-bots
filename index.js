@@ -31,7 +31,6 @@ let task = cron.schedule(
   async () => {
     try {
       const news = await getNews();
-      bot.telegram.sendMessage("-1001989946156", "##########NEWS##########");
       for (let index = 0; index < 10; index++) {
         const element = news[index];
         const tituloTraducido =
